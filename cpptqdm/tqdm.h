@@ -26,6 +26,7 @@ class tqdm {
         unsigned int smoothing = 50;
         bool use_ema = true;
         float alpha_ema = 0.1;
+        std::string extra_info_ = "";
 
         std::vector<const char*> bars = {" ", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"};
 
@@ -80,6 +81,7 @@ class tqdm {
             nupdates = 0;
             total_ = 0;
             label = "";
+            extra_info_ = "";;
         }
 
         void set_theme_line() { bars = {"─", "─", "─", "╾", "╾", "╾", "╾", "━", "═"}; }
@@ -91,20 +93,21 @@ class tqdm {
             bars = {" ", " ", " ", " ", " ", " ", " ", " ", "#"}; 
             right_pad = "|";
         }
-        void set_label(std::string label_) { label = label_; }
+        void set_description(std::string label_) { label = label_; }
         void disable_colors() {
             color_transition = false;
             use_colors = false;
         }
 
         void finish() {
-            progress(total_,total_);
+            progress(total_,total_,extra_info_);
             printf("\n");
             fflush(stdout);
         }
-        void progress(int curr, int tot) {
+        void progress(int curr, int tot, std::string extra_info = "") {
             if(is_tty && (curr%period == 0)) {
                 total_ = tot;
+                extra_info_ =  extra_info;
                 nupdates++;
                 auto now = std::chrono::system_clock::now();
                 double dt = ((std::chrono::duration<double>)(now - t_old)).count();
@@ -159,6 +162,7 @@ class tqdm {
                         printf("\033[32m ");
                     }
                 }
+                printf("%s ", label.c_str());
                 for (int i = 0; i < ifills; i++) std::cout << bars[8];
                 if (!in_screen and (curr != tot)) printf("%s",bars[(int)(8.0*(fills-ifills))]);
                 for (int i = 0; i < width-ifills-1; i++) std::cout << bars[0];
@@ -175,7 +179,7 @@ class tqdm {
                     unit = "kHz"; div = 1.0e3;
                 }
                 printf("[%4d/%4d | %3.1f %s | %.0fs<%.0fs] ", curr,tot,  avgrate/div, unit.c_str(), dt_tot, peta);
-                printf("%s ", label.c_str());
+                printf("%s ", extra_info_.c_str());                
                 if (use_colors) printf("\033[0m\033[32m\033[0m\015 ");
 
                 if( ( tot - curr ) > period ) fflush(stdout);

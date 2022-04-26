@@ -1,3 +1,5 @@
+#ifndef QUANTIZER_INCLUDE_TQDM_H_
+#define QUANTIZER_INCLUDE_TQDM_H_
 #pragma once
 
 /*
@@ -34,6 +36,14 @@
 #include <type_traits>
 
 // -------------------- chrono stuff --------------------
+inline std::string operator*(const std::string& s, size_t n) {
+    std::string result;
+    result.reserve(s.size()*n);
+    for(size_t i = 0; i < n; ++i) {
+        result += s;
+    }
+    return result;
+}
 
 namespace tq
 {
@@ -70,15 +80,15 @@ public:
 };
 
 // -------------------- progress_bar --------------------
-void clamp(double& x, double a, double b)
-{
-    if (x < a) x = a;
-    if (x > b) x = b;
-}
-
 class progress_bar
 {
 public:
+    void clamp(double& x, double a, double b)
+    {
+        if (x < a) x = a;
+        if (x > b) x = b;
+    }
+
     void restart()
     {
         chronometer_.reset();
@@ -121,12 +131,12 @@ private:
 
         std::stringstream bar;
 
-        bar << '\r' << prefix_ << '{' << std::fixed << std::setprecision(1)
-            << std::setw(5) << 100*progress << "%} ";
+        bar << '\r' << prefix_ << " ";
 
         print_bar(bar, progress);
 
-        bar << " (" << t << "s < " << eta << "s) ";
+        bar << std::fixed << std::setprecision(1) << std::setw(5) << 100*progress << "% ";
+        bar << " [" << t << "s < " << eta << "s] ";
 
         std::string sbar = bar.str();
         std::string suffix = suffix_.str();
@@ -138,13 +148,17 @@ private:
         (*os_) << sbar << suffix << std::string(num_blank, ' ') << std::flush;
 
         os_->flags(flags);
+
+        if(progress == 1) // if the bar came to the end, make new line
+            std::cout << std::endl;
     }
 
     void print_bar(std::stringstream& ss, double filled) const
     {
         auto num_filled = static_cast<index>(std::round(filled*bar_size_));
-        ss << '[' << std::string(num_filled, '#')
-           << std::string(bar_size_ - num_filled, ' ') << ']';
+        std::string filled_bar = "█";
+        filled_bar = filled_bar * num_filled;
+        ss << filled_bar << std::string(bar_size_ - num_filled, ' ') << "▎";
     }
 
     double time_since_refresh() const { return refresh_.peek(); }
@@ -569,9 +583,10 @@ private:
     progress_bar bar_;
 };
 
-auto tqdm(timer t)
+inline auto tqdm(timer t)
 {
     return tqdm_timer(t.num_seconds);
 }
 
 } // namespace tq
+#endif

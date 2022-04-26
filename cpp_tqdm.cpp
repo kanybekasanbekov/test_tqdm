@@ -9,8 +9,11 @@ int main(){
     int arr[length];
 
     tqdm bar;
+    bar.set_description("TRAINING:");
     for(int i=0; i<length; i++){
-        bar.progress(i, length);
+        float top1 = (float) (i % 17) / 20;
+        string top1_log = "TOP1: " + to_string(top1);
+        bar.progress(i, length, top1_log);
         for(int j=0; j<length; j++){
             arr[j] = 0;
         }
